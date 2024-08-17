@@ -49,7 +49,7 @@ if youtube_url:
 
     # Display embedded YouTube video with increased size
     video_html = f"""
-    <iframe width="100%" height="600px" src="https://www.youtube.com/embed/{video_id}" 
+    <iframe width="100%" src="https://www.youtube.com/embed/{video_id}" 
     frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
     allowfullscreen></iframe>
     """
