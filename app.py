@@ -2,6 +2,8 @@ import streamlit as st
 from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 
+st.set_page_config(layout="wide")
+
 # Set up OpenAI client
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
@@ -47,13 +49,8 @@ youtube_url = st.text_input("Enter YouTube Video URL:", "")
 if youtube_url:
     video_id = get_video_id(youtube_url)
 
-    # Display embedded YouTube video with increased size
-    video_html = f"""
-    <iframe width="100%" src="https://www.youtube.com/embed/{video_id}" 
-    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-    allowfullscreen></iframe>
-    """
-    st.markdown(video_html, unsafe_allow_html=True)
+    # Display embedded YouTube video
+    st.video(f"https://www.youtube.com/watch?v={video_id}")
 
     # Fetch, format, and display the transcript
     display_transcript(video_id)
