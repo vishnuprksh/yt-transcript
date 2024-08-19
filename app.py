@@ -21,7 +21,7 @@ def format_transcript(text: str) -> str:
             {"role": "system", "content": "You are a helpful assistant that formats transcripts."},
             {
                 "role": "user",
-                "content": f"Please format the following transcript text into a neat, readable format:\n\n{text}"
+                "content": f"Please format the following transcript text into a neat, readable format without content modification:\n\n{text}"
             }
         ]
     )
