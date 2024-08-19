@@ -29,15 +29,14 @@ def format_transcript(text: str) -> str:
 
 # Function to fetch, format, and display the transcript
 def display_transcript(video_id: str):
-    """Fetches the transcript, formats it using GPT-4o-mini API, and displays it under an <article> tag."""
+    """Fetches the transcript, formats it using GPT-4o-mini API, and displays it."""
     transcript = YouTubeTranscriptApi.get_transcript(video_id)
     raw_text = ". ".join(entry['text'] for entry in transcript) + "."
     
     # Format the raw transcript using GPT-4o-mini
     formatted_text = format_transcript(raw_text)
     
-    # Display the formatted transcript under an <article> tag
-    st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_text}</article>", unsafe_allow_html=True)
+    st.markdown(f"<div style='white-space: pre-wrap;'>{formatted_text}</div>", unsafe_allow_html=True)
 
 # Streamlit app title
 st.title("YouTube Video Transcript Viewer")
