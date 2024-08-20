@@ -50,6 +50,8 @@ youtube_url = st.text_input("Enter YouTube Video URL:", "")
 if youtube_url:
     video_id = get_video_id(youtube_url)
 
+    st.write("This is a test text")
+
     # Display embedded YouTube video
     st.video(f"https://www.youtube.com/watch?v={video_id}")
 
