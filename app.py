@@ -2,7 +2,7 @@ import streamlit as st
 from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
 
 # Set up OpenAI client
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
@@ -23,7 +23,7 @@ def format_transcript(text: str) -> str:
             {"role": "system", "content": "You are a helpful assistant that formats transcripts."},
             {
                 "role": "user",
-                "content": f"Please format the following transcript text into a neat, readable format without content modification. Also :\n\n{text}"
+                "content": f"Convert the following transcript text into a neat, readable format (add section headers, remove fillers, correct grammar) without content loss or modification. :\n\n{text}"
             }
         ]
     )
