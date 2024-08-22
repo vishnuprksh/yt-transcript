@@ -23,7 +23,7 @@ def format_transcript(text: str) -> str:
             {"role": "system", "content": "You are a helpful assistant that formats transcripts."},
             {
                 "role": "user",
-                "content": f"Convert the following transcript text into a neat, readable format (add section headers, remove fillers, correct grammar). Below it also print percentage of lost content from the original transcript:\n\n{text}"
+                "content": f"Convert the following transcript text into a neat, readable format (add section headers, remove fillers, correct grammar). Below it also do a content retension analysis from the original transcript:\n\n{text}"
             }
         ]
     )
