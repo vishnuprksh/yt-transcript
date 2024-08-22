@@ -23,7 +23,7 @@ def format_transcript(text: str) -> str:
             {"role": "system", "content": "You are a helpful assistant that formats transcripts."},
             {
                 "role": "user",
-                "content": f"Convert the following transcript text into a neat, readable format (add section headers, remove fillers, correct grammar) without content loss or modification. :\n\n{text}"
+                "content": f"Convert the following transcript text into a neat, readable format (add section headers, remove fillers, correct grammar). Below it also print percentage of lost content from the original transcript:\n\n{text}"
             }
         ]
     )
@@ -49,8 +49,6 @@ youtube_url = st.text_input("Enter YouTube Video URL:", "")
 
 if youtube_url:
     video_id = get_video_id(youtube_url)
-
-    st.write("This is a test text")
 
     # Display embedded YouTube video
     st.video(f"https://www.youtube.com/watch?v={video_id}")
