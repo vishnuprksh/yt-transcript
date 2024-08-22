@@ -24,7 +24,7 @@ def format_transcript(text: str) -> str:
             {
                 "role": "user",
                 "content": f"""Convert the following transcript text into a neat, readable format without lossing any content(add section headers, remove fillers, correct grammar, enclose latex equations in '$'). 
-                Also give a content retension report (total number of words, retained, filler, grammer correction, data redundancy, data irrelevance) : \n\n{text}"""
+                Also give a content retension report (contains size of the following: total number of words, retained, filler, words removed for grammer correction, words removed for data redundancy, words removed for data irrelevance) : \n\n{text}"""
             }
         ]
     )
