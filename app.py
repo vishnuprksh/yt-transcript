@@ -23,7 +23,7 @@ def format_transcript(text: str) -> str:
             {"role": "system", "content": "You are a helpful assistant that formats transcripts."},
             {
                 "role": "user",
-                "content": f"""Format the following transcript (ONLY REMOVE fillers) : \n\n{text}"""
+                "content": f"""Remove the filler words from the following transcript, and give suitable headings. : \n\n{text}"""
             }
         ]
     )
