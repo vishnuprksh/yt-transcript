@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
+import pyperclip
 
 # Set up OpenAI client
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
@@ -60,13 +61,5 @@ if youtube_url:
 
     # Add a copy button
     if st.button("Copy Transcript"):
-        # Use JavaScript to copy the transcript to clipboard
-        st.markdown(
-            """
-            <script>
-            navigator.clipboard.writeText(`""" + formatted_transcript.replace("`", "\\`") + """`);
-            alert('Transcript copied to clipboard!');
-            </script>
-            """,
-            unsafe_allow_html=True,
-        )
+        pyperclip.copy(formatted_transcript)  # Copy to clipboard
+        st.success("Transcript copied to clipboard!")
