@@ -27,19 +27,11 @@ def format_transcript(text: str) -> str:
     )
     return completion.choices[0].message.content.strip()
 
-# Function to fetch, format, and display the transcript
-def display_transcript(video_id: str) -> str:
-    """Fetches the transcript, formats it using GPT-4o-mini API, and returns the formatted transcript."""
+# Function to fetch transcript from YouTube
+def fetch_transcript(video_id: str) -> str:
+    """Fetches the raw transcript from a YouTube video."""
     transcript = YouTubeTranscriptApi.get_transcript(video_id)
-    raw_text = ". ".join(entry['text'] for entry in transcript) + "."
-    
-    # Format the raw transcript using GPT-4o-mini
-    formatted_text = format_transcript(raw_text)
-    
-    # Display the formatted transcript under an <article> tag
-    st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_text}</article>", unsafe_allow_html=True)
-    
-    return formatted_text
+    return ". ".join(entry['text'] for entry in transcript) + "."
 
 # Streamlit app title
 st.title("YouTube Video Transcript Viewer")
@@ -53,13 +45,22 @@ if youtube_url:
     # Display embedded YouTube video
     st.video(f"https://www.youtube.com/watch?v={video_id}")
 
-    # Fetch, format, and display the transcript
-    formatted_transcript = display_transcript(video_id)
+    # Check if the formatted transcript exists in session state
+    if "formatted_transcript" not in st.session_state or st.session_state.get("current_video_id") != video_id:
+        # Fetch and format transcript only once
+        raw_text = fetch_transcript(video_id)
+        formatted_transcript = format_transcript(raw_text)
+        st.session_state["formatted_transcript"] = formatted_transcript
+        st.session_state["current_video_id"] = video_id
+    else:
+        formatted_transcript = st.session_state["formatted_transcript"]
+
+    # Display the formatted transcript
+    st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", unsafe_allow_html=True)
 
     # Add a copy button
     if st.button("Copy Transcript"):
-        # Use Streamlit session state to store the transcript
-        st.session_state["transcript"] = formatted_transcript
+        # Use JavaScript to copy the transcript to clipboard
         st.markdown(
             """
             <script>
