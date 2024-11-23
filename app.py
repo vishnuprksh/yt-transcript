@@ -2,8 +2,6 @@ import streamlit as st
 from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 
-# st.set_page_config(layout="wide")
-
 # Set up OpenAI client
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
@@ -30,8 +28,8 @@ def format_transcript(text: str) -> str:
     return completion.choices[0].message.content.strip()
 
 # Function to fetch, format, and display the transcript
-def display_transcript(video_id: str):
-    """Fetches the transcript, formats it using GPT-4o-mini API, and displays it under an <article> tag."""
+def display_transcript(video_id: str) -> str:
+    """Fetches the transcript, formats it using GPT-4o-mini API, and returns the formatted transcript."""
     transcript = YouTubeTranscriptApi.get_transcript(video_id)
     raw_text = ". ".join(entry['text'] for entry in transcript) + "."
     
@@ -40,6 +38,8 @@ def display_transcript(video_id: str):
     
     # Display the formatted transcript under an <article> tag
     st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_text}</article>", unsafe_allow_html=True)
+    
+    return formatted_text
 
 # Streamlit app title
 st.title("YouTube Video Transcript Viewer")
@@ -54,4 +54,18 @@ if youtube_url:
     st.video(f"https://www.youtube.com/watch?v={video_id}")
 
     # Fetch, format, and display the transcript
-    display_transcript(video_id)
+    formatted_transcript = display_transcript(video_id)
+
+    # Add a copy button
+    if st.button("Copy Transcript"):
+        # Use Streamlit session state to store the transcript
+        st.session_state["transcript"] = formatted_transcript
+        st.markdown(
+            """
+            <script>
+            navigator.clipboard.writeText(`""" + formatted_transcript.replace("`", "\\`") + """`);
+            alert('Transcript copied to clipboard!');
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
