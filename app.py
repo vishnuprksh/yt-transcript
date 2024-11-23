@@ -1,7 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
-import pyperclip
+import streamlit.components.v1 as components
 
 # Set up OpenAI client
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
@@ -56,10 +56,23 @@ if youtube_url:
     else:
         formatted_transcript = st.session_state["formatted_transcript"]
 
-    # Display the formatted transcript
+    # Display the formatted transcript under an <article> tag
     st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", unsafe_allow_html=True)
 
-    # Add a copy button
-    if st.button("Copy Transcript"):
-        pyperclip.copy(formatted_transcript)  # Copy to clipboard
-        st.success("Transcript copied to clipboard!")
+    # JavaScript for "Copy to Clipboard"
+    copy_script = f"""
+    <script>
+    function copyToClipboard() {{
+        const textToCopy = `{formatted_transcript.replace("`", "\\`")}`;
+        navigator.clipboard.writeText(textToCopy).then(function() {{
+            alert('Transcript copied to clipboard!');
+        }}, function(err) {{
+            console.error('Could not copy text: ', err);
+        }});
+    }}
+    </script>
+    <button onclick="copyToClipboard()">Copy Transcript</button>
+    """
+    
+    # Embed the script and button using Streamlit components
+    components.html(copy_script, height=40)
