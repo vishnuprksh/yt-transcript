@@ -51,6 +51,12 @@ if youtube_url:
         # Fetch and format transcript only once
         raw_text = fetch_transcript(video_id)
         formatted_transcript = format_transcript(raw_text)
+
+        # Append "source: video url" to the beginning of the formatted transcript
+        video_url = f"https://www.youtube.com/watch?v={video_id}"
+        formatted_transcript = f"Source: {video_url}\n\n{formatted_transcript}"
+
+        # Save formatted transcript and video ID in session state
         st.session_state["formatted_transcript"] = formatted_transcript
         st.session_state["current_video_id"] = video_id
     else:
@@ -76,3 +82,4 @@ if youtube_url:
     
     # Embed the script and button using Streamlit components
     components.html(copy_script, height=40)
+
