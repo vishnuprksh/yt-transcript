@@ -17,10 +17,7 @@ def get_video_id(url: str) -> str:
 # Function to format transcript using GPT-4o-mini API
 def format_transcript(text: str, source_url: str) -> str:
     """Formats the transcript text using the GPT-4o-mini API."""
-    # Add metadata header with source URL and timestamp
-    metadata = f"""Source: {source_url}
-Retrieved: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"""
-    
+    # Get the formatted transcript from GPT
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -32,8 +29,26 @@ Retrieved: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"""
         ]
     )
     
-    # Combine metadata with formatted transcript
-    return metadata + completion.choices[0].message.content.strip()
+    formatted_text = completion.choices[0].message.content.strip()
+    
+    # Find the first occurrence of a newline after the main heading
+    # Assuming the main heading is the first line
+    first_newline = formatted_text.find('\n')
+    if first_newline == -1:
+        return formatted_text  # If no newline found, return as is
+    
+    # Create metadata section
+    metadata = f"""Source: {source_url}
+Retrieved: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+"""
+    
+    # Insert metadata after the main heading
+    final_text = (formatted_text[:first_newline + 1] + 
+                 metadata + 
+                 formatted_text[first_newline + 1:])
+    
+    return final_text
 
 # Function to fetch transcript from YouTube
 def fetch_transcript(video_id: str) -> str:
