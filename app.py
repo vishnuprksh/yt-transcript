@@ -19,7 +19,7 @@ def format_transcript(text: str, source_url: str) -> str:
     """Formats the transcript text using the GPT-4o-mini API."""
     # Get the formatted transcript from GPT
     completion = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": """You are a helpful assistant tasked with adding headings to a YouTube transcript, preserving all content without removal or summarization. Additionally, you should correct any grammatical errors in the text while keeping the original meaning intact. The text should remain exactly as it is, except for necessary grammar fixes. Your task is to add headings before sections of the transcript to indicate topic changes, speaker changes, or logical breaks in the flow, but the content should not be shortened, summarized, or altered in any other way."""},
 
