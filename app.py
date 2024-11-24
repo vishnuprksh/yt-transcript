@@ -21,10 +21,13 @@ def format_transcript(text: str, source_url: str) -> str:
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant that formats transcripts."},
+            {"role": "system", "content": "You are a helpful assistant that format youtube transcripts"},
             {
                 "role": "user",
-                "content": f"""Add suitable headings and subheadings to the following transcript without any modifications to the transcript : \n\n{text}"""
+                "content": f"""
+                    add headings and remove filler sounds from the follwing transcript.
+                    DO NOT modify or summarize other contents. 
+                    : \n\n{text}"""
             }
         ]
     )
