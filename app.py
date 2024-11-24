@@ -21,11 +21,14 @@ def format_transcript(text: str, source_url: str) -> str:
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are a youtube transcript formatting assistant"},
+            {"role": "system", "content": """You are an assistant for youtube video transcript formatting.
+                                            Add headings to the given transcripts.
+                                            Remove filler words from the transcript.
+                                            DO NOT remove sentences from content, because complete transcript is required.
+                                            """},
             {
                 "role": "user",
-                "content": f"""
-                    add headings to the follwing transcript : \n\n{text}"""
+                "content": f"""format the follwing transcript : \n\n{text}"""
             }
         ]
     )
