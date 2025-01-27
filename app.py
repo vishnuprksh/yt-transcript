@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
+import streamlit.components.v1 as components
 from datetime import datetime
 
 # Set up OpenAI client
@@ -13,9 +14,9 @@ def get_video_id(url: str) -> str:
         return url.split("watch?v=")[-1]
     return url.split("/")[-1]
 
-# Function to format transcript using GPT-4o-mini API
+# Function to format transcript using GPT
 def format_transcript(text: str, source_url: str) -> str:
-    """Formats the transcript text using the GPT-4o-mini API."""
+    """Formats the transcript text using GPT."""
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -25,30 +26,11 @@ def format_transcript(text: str, source_url: str) -> str:
              The text should remain exactly as it is, except for necessary grammar fixes. 
              Your task is to add headings before sections of the transcript to indicate topic changes, speaker changes, 
              or logical breaks in the flow, but the content should not be shortened, summarized, or altered in any other way."""},
-
-            {
-                "role": "user",
-                "content": f"""{text}"""
-            }
+            {"role": "user", "content": f"""{text}"""}
         ]
     )
     
-    formatted_text = completion.choices[0].message.content.strip()
-    
-    first_newline = formatted_text.find('\n')
-    if first_newline == -1:
-        return formatted_text  # If no newline found, return as is
-    
-    metadata = f"""Source: {source_url}
-Retrieved: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-"""
-    
-    final_text = (formatted_text[:first_newline + 1] + 
-                 metadata + 
-                 formatted_text[first_newline + 1:])
-    
-    return final_text
+    return completion.choices[0].message.content.strip()
 
 # Function to generate study notes using GPT
 def generate_study_note(transcript: str, source_url: str) -> str:
@@ -120,9 +102,25 @@ if youtube_url:
         else:
             formatted_transcript = st.session_state["formatted_transcript"]
 
-        # Display the formatted transcript under an <article> tag
+        # Display the formatted transcript
         st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", 
                     unsafe_allow_html=True)
+
+        # Add a copy button for the transcript
+        copy_script_transcript = f"""
+        <script>
+        function copyTranscript() {{
+            const textToCopy = `{formatted_transcript.replace("`", "\\`")}`;
+            navigator.clipboard.writeText(textToCopy).then(function() {{
+                alert('Transcript copied to clipboard!');
+            }}, function(err) {{
+                console.error('Could not copy text: ', err);
+            }});
+        }}
+        </script>
+        <button onclick="copyTranscript()">Copy Transcript</button>
+        """
+        components.html(copy_script_transcript, height=40)
 
     elif note_button:
         # Check if study note already exists in session state
@@ -138,3 +136,19 @@ if youtube_url:
         # Display the generated study note
         st.markdown(f"<article style='white-space: pre-wrap;'>{study_note}</article>", 
                     unsafe_allow_html=True)
+
+        # Add a copy button for the study note
+        copy_script_note = f"""
+        <script>
+        function copyNote() {{
+            const textToCopy = `{study_note.replace("`", "\\`")}`;
+            navigator.clipboard.writeText(textToCopy).then(function() {{
+                alert('Study Note copied to clipboard!');
+            }}, function(err) {{
+                console.error('Could not copy text: ', err);
+            }});
+        }}
+        </script>
+        <button onclick="copyNote()">Copy Study Note</button>
+        """
+        components.html(copy_script_note, height=40)
