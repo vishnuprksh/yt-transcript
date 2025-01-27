@@ -71,8 +71,10 @@ PURPOSE:
 IMPORTANT:
 - Mention the source of the video (Source: {source_url})
 - Strictly do not lose data during conversion.
-- Do not skip the data just because the image is not available. Use placeholders for images with names (fig1, fig2...etc.) to explain that part.
-- Do not keep image placeholders to the end of the note. Place them properly during the note.
+- If equations are mentioned provide latex code
+- If images are used in the video to explain a topic, use a name (eg: fig1, fig2...etc.) and explain the topic in the note. Strictly do not miss it.
+- For the mentioned images, provide placeholders in the note.
+- The placeholders should be properly placed during the note, do not keep it for end of the note.
 """
     if model == "GPT-4o-mini":
         return call_gpt_model(prompt)
