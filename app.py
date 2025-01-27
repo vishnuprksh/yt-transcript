@@ -21,19 +21,18 @@ def format_transcript(text: str, source_url: str) -> str:
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": """You are a helpful assistant tasked with adding headings to a YouTube transcript, preserving all content without removal or summarization. Additionally, you should correct any grammatical errors in the text while keeping the original meaning intact. The text should remain exactly as it is, except for necessary grammar fixes. Your task is to add headings before sections of the transcript to indicate topic changes, speaker changes, or logical breaks in the flow, but the content should not be shortened, summarized, or altered in any other way."""},
-
-            {
-                "role": "user",
-                "content": f"""{text}"""
-            }
+            {"role": "system", "content": """You are a helpful assistant tasked with adding headings to a YouTube transcript, 
+             preserving all content without removal or summarization. 
+             Additionally, you should correct any grammatical errors in the text while keeping the original meaning intact. 
+             The text should remain exactly as it is, except for necessary grammar fixes. 
+             Your task is to add headings before sections of the transcript to indicate topic changes, speaker changes, 
+             or logical breaks in the flow, but the content should not be shortened, summarized, or altered in any other way."""},
+            {"role": "user", "content": f"""{text}"""}
         ]
     )
-    
     formatted_text = completion.choices[0].message.content.strip()
     
     # Find the first occurrence of a newline after the main heading
-    # Assuming the main heading is the first line
     first_newline = formatted_text.find('\n')
     if first_newline == -1:
         return formatted_text  # If no newline found, return as is
@@ -43,12 +42,10 @@ def format_transcript(text: str, source_url: str) -> str:
 Retrieved: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 """
-    
     # Insert metadata after the main heading
     final_text = (formatted_text[:first_newline + 1] + 
                  metadata + 
                  formatted_text[first_newline + 1:])
-    
     return final_text
 
 # Function to fetch transcript from YouTube
@@ -80,24 +77,31 @@ if youtube_url:
     else:
         formatted_transcript = st.session_state["formatted_transcript"]
 
-    # Display the formatted transcript under an <article> tag
-    st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", 
-               unsafe_allow_html=True)
+    # Create two buttons horizontally
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Transcript"):
+            # Display the formatted transcript under an <article> tag
+            st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", 
+                        unsafe_allow_html=True)
+            
+            # JavaScript for "Copy to Clipboard"
+            copy_script = f"""
+            <script>
+            function copyToClipboard() {{
+                const textToCopy = `{formatted_transcript.replace("`", "\\`")}`;
+                navigator.clipboard.writeText(textToCopy).then(function() {{
+                    alert('Transcript copied to clipboard!');
+                }}, function(err) {{
+                    console.error('Could not copy text: ', err);
+                }});
+            }}
+            </script>
+            <button onclick="copyToClipboard()">Copy Transcript</button>
+            """
+            # Embed the script and button using Streamlit components
+            components.html(copy_script, height=40)
 
-    # JavaScript for "Copy to Clipboard"
-    copy_script = f"""
-    <script>
-    function copyToClipboard() {{
-        const textToCopy = `{formatted_transcript.replace("`", "\\`")}`;
-        navigator.clipboard.writeText(textToCopy).then(function() {{
-            alert('Transcript copied to clipboard!');
-        }}, function(err) {{
-            console.error('Could not copy text: ', err);
-        }});
-    }}
-    </script>
-    <button onclick="copyToClipboard()">Copy Transcript</button>
-    """
-    
-    # Embed the script and button using Streamlit components
-    components.html(copy_script, height=40)
+    with col2:
+        if st.button("Note"):
+            st.info("To be added soon")
