@@ -17,7 +17,6 @@ def get_video_id(url: str) -> str:
 # Function to format transcript using GPT-4o-mini API
 def format_transcript(text: str, source_url: str) -> str:
     """Formats the transcript text using the GPT-4o-mini API."""
-    # Get the formatted transcript from GPT
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -27,25 +26,29 @@ def format_transcript(text: str, source_url: str) -> str:
              The text should remain exactly as it is, except for necessary grammar fixes. 
              Your task is to add headings before sections of the transcript to indicate topic changes, speaker changes, 
              or logical breaks in the flow, but the content should not be shortened, summarized, or altered in any other way."""},
-            {"role": "user", "content": f"""{text}"""}
+
+            {
+                "role": "user",
+                "content": f"""{text}"""
+            }
         ]
     )
+    
     formatted_text = completion.choices[0].message.content.strip()
     
-    # Find the first occurrence of a newline after the main heading
     first_newline = formatted_text.find('\n')
     if first_newline == -1:
         return formatted_text  # If no newline found, return as is
     
-    # Create metadata section
     metadata = f"""Source: {source_url}
 Retrieved: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 """
-    # Insert metadata after the main heading
+    
     final_text = (formatted_text[:first_newline + 1] + 
                  metadata + 
                  formatted_text[first_newline + 1:])
+    
     return final_text
 
 # Function to fetch transcript from YouTube
@@ -67,41 +70,48 @@ if youtube_url:
     # Display embedded YouTube video
     st.video(full_url)
 
-    # Check if the formatted transcript exists in session state
-    if "formatted_transcript" not in st.session_state or st.session_state.get("current_video_id") != video_id:
-        # Fetch and format transcript only once
-        raw_text = fetch_transcript(video_id)
-        formatted_transcript = format_transcript(raw_text, full_url)
-        st.session_state["formatted_transcript"] = formatted_transcript
-        st.session_state["current_video_id"] = video_id
-    else:
-        formatted_transcript = st.session_state["formatted_transcript"]
-
-    # Create two buttons horizontally
+    # Create columns for buttons
     col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Transcript"):
-            # Display the formatted transcript under an <article> tag
-            st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", 
-                        unsafe_allow_html=True)
-            
-            # JavaScript for "Copy to Clipboard"
-            copy_script = f"""
-            <script>
-            function copyToClipboard() {{
-                const textToCopy = `{formatted_transcript.replace("`", "\\`")}`;
-                navigator.clipboard.writeText(textToCopy).then(function() {{
-                    alert('Transcript copied to clipboard!');
-                }}, function(err) {{
-                    console.error('Could not copy text: ', err);
-                }});
-            }}
-            </script>
-            <button onclick="copyToClipboard()">Copy Transcript</button>
-            """
-            # Embed the script and button using Streamlit components
-            components.html(copy_script, height=40)
 
+    # Buttons to toggle between transcript and a placeholder message
+    with col1:
+        transcript_button = st.button("Transcript")
     with col2:
-        if st.button("Note"):
-            st.info("To be added soon")
+        note_button = st.button("Note")
+
+    if transcript_button:
+        # Check if the formatted transcript exists in session state
+        if "formatted_transcript" not in st.session_state or st.session_state.get("current_video_id") != video_id:
+            # Fetch and format transcript only once
+            raw_text = fetch_transcript(video_id)
+            formatted_transcript = format_transcript(raw_text, full_url)
+            st.session_state["formatted_transcript"] = formatted_transcript
+            st.session_state["current_video_id"] = video_id
+        else:
+            formatted_transcript = st.session_state["formatted_transcript"]
+
+        # Display the formatted transcript under an <article> tag
+        st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", 
+                    unsafe_allow_html=True)
+
+        # JavaScript for "Copy to Clipboard"
+        copy_script = f"""
+        <script>
+        function copyToClipboard() {{
+            const textToCopy = `{formatted_transcript.replace("`", "\\`")}`;
+            navigator.clipboard.writeText(textToCopy).then(function() {{
+                alert('Transcript copied to clipboard!');
+            }}, function(err) {{
+                console.error('Could not copy text: ', err);
+            }});
+        }}
+        </script>
+        <button onclick="copyToClipboard()">Copy Transcript</button>
+        """
+        
+        # Embed the script and button using Streamlit components
+        components.html(copy_script, height=40)
+
+    elif note_button:
+        # Display "To be added soon" when Note button is clicked
+        st.write("To be added soon")
