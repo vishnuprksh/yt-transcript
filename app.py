@@ -1,11 +1,14 @@
+import re
 import streamlit as st
 from openai import OpenAI
+from groq import Groq
 from youtube_transcript_api import YouTubeTranscriptApi
 import streamlit.components.v1 as components
 from datetime import datetime
 
-# Set up OpenAI client
-client = OpenAI(api_key=st.secrets["openai"]["api_key"])
+# Initialize clients
+openai_client = OpenAI(api_key=st.secrets["openai"]["api_key"])
+groq_client = Groq(api_key=st.secrets["groq"]["api_key"])
 
 # Function to get YouTube video ID from a URL
 def get_video_id(url: str) -> str:
@@ -14,27 +17,51 @@ def get_video_id(url: str) -> str:
         return url.split("watch?v=")[-1]
     return url.split("/")[-1]
 
-# Function to format transcript using GPT
-def format_transcript(text: str, source_url: str) -> str:
-    """Formats the transcript text using GPT."""
-    completion = client.chat.completions.create(
+# Function to call GPT-4o-mini via OpenAI
+def call_gpt_model(prompt: str) -> str:
+    """Calls GPT-4o-mini model and returns the result."""
+    completion = openai_client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": """You are a helpful assistant tasked with adding headings to a YouTube transcript, 
-             preserving all content without removal or summarization. 
-             Additionally, you should correct any grammatical errors in the text while keeping the original meaning intact. 
-             The text should remain exactly as it is, except for necessary grammar fixes. 
-             Your task is to add headings before sections of the transcript to indicate topic changes, speaker changes, 
-             or logical breaks in the flow, but the content should not be shortened, summarized, or altered in any other way."""},
-            {"role": "user", "content": f"""{text}"""}
-        ]
+        messages=[{"role": "user", "content": prompt}]
     )
-    
     return completion.choices[0].message.content.strip()
 
-# Function to generate study notes using GPT
-def generate_study_note(transcript: str, source_url: str) -> str:
-    """Generates a detailed study note from the transcript using GPT."""
+# Function to call Groq's R1 model
+def call_groq_model(prompt: str) -> str:
+    """Calls Groq's R1 model and returns the result, removing <think>...</think> sections."""
+    completion = groq_client.chat.completions.create(
+        model="deepseek-r1-distill-llama-70b",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.6,
+        max_completion_tokens=1024,
+        top_p=0.95,
+        stream=False
+    )
+    full_output = completion.choices[0].message.content
+    # Remove <think>...</think> tags from the output
+    return re.sub(r"<think>.*?</think>", "", full_output, flags=re.DOTALL).strip()
+
+# Function to format transcript using the selected model
+def format_transcript(text: str, source_url: str, model: str) -> str:
+    """Formats the transcript text using the selected model."""
+    prompt = f"""You are a helpful assistant tasked with adding headings to a YouTube transcript, 
+    preserving all content without removal or summarization. 
+    Additionally, you should correct any grammatical errors in the text while keeping the original meaning intact. 
+    The text should remain exactly as it is, except for necessary grammar fixes. 
+    Your task is to add headings before sections of the transcript to indicate topic changes, speaker changes, 
+    or logical breaks in the flow, but the content should not be shortened, summarized, or altered in any other way.
+
+    Transcript:
+    {text}"""
+
+    if model == "GPT-4o-mini":
+        return call_gpt_model(prompt)
+    elif model == "Groq R1":
+        return call_groq_model(prompt)
+
+# Function to generate study notes using the selected model
+def generate_study_note(transcript: str, source_url: str, model: str) -> str:
+    """Generates a detailed study note from the transcript using the selected model."""
     prompt = f"""
 transcript
 \"\"\"{transcript}\"\"\"
@@ -47,13 +74,10 @@ IMPORTANT:
 - Do not skip the data just because the image is not available. Use placeholders for images with names (fig1, fig2...etc.) to explain that part.
 - Do not keep image placeholders to the end of the note. Place them properly during the note.
 """
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "system", "content": "You are a helpful assistant that creates detailed study notes from transcripts."},
-                  {"role": "user", "content": prompt}]
-    )
-    
-    return completion.choices[0].message.content.strip()
+    if model == "GPT-4o-mini":
+        return call_gpt_model(prompt)
+    elif model == "Groq R1":
+        return call_groq_model(prompt)
 
 # Function to fetch transcript from YouTube
 def fetch_transcript(video_id: str) -> str:
@@ -66,6 +90,9 @@ st.title("YouTube Video Transcript Viewer")
 
 # Input field for YouTube URL
 youtube_url = st.text_input("Enter YouTube Video URL:", "")
+
+# Dropdown to select the model
+model_option = st.selectbox("Choose a model:", ["GPT-4o-mini", "Groq R1"])
 
 if youtube_url:
     video_id = get_video_id(youtube_url)
@@ -92,15 +119,9 @@ if youtube_url:
         note_button = st.button("Note")
 
     if transcript_button:
-        # Check if the formatted transcript exists in session state
-        if "formatted_transcript" not in st.session_state or st.session_state.get("current_video_id") != video_id:
-            # Fetch and format transcript only once
-            raw_text = fetch_transcript(video_id)
-            formatted_transcript = format_transcript(raw_text, full_url)
-            st.session_state["formatted_transcript"] = formatted_transcript
-            st.session_state["current_video_id"] = video_id
-        else:
-            formatted_transcript = st.session_state["formatted_transcript"]
+        # Fetch and format the transcript using the selected model
+        raw_text = fetch_transcript(video_id)
+        formatted_transcript = format_transcript(raw_text, full_url, model_option)
 
         # Display the formatted transcript
         st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", 
@@ -123,15 +144,9 @@ if youtube_url:
         components.html(copy_script_transcript, height=40)
 
     elif note_button:
-        # Check if study note already exists in session state
-        if "study_note" not in st.session_state or st.session_state.get("current_video_id") != video_id:
-            # Generate and store study note
-            raw_text = fetch_transcript(video_id)
-            study_note = generate_study_note(raw_text, full_url)
-            st.session_state["study_note"] = study_note
-            st.session_state["current_video_id"] = video_id
-        else:
-            study_note = st.session_state["study_note"]
+        # Generate the study note using the selected model
+        raw_text = fetch_transcript(video_id)
+        study_note = generate_study_note(raw_text, full_url, model_option)
 
         # Display the generated study note
         st.markdown(f"<article style='white-space: pre-wrap;'>{study_note}</article>", 
