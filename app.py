@@ -1,7 +1,6 @@
 import streamlit as st
 from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
-import streamlit.components.v1 as components
 from datetime import datetime
 
 # Set up OpenAI client
@@ -51,6 +50,29 @@ Retrieved: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     
     return final_text
 
+# Function to generate study notes using GPT
+def generate_study_note(transcript: str, source_url: str) -> str:
+    """Generates a detailed study note from the transcript using GPT."""
+    prompt = f"""
+transcript
+\"\"\"{transcript}\"\"\"
+
+PURPOSE:
+- Change the following transcript into a detailed study note (talking style to layman style explanation). 
+IMPORTANT:
+- Mention the source of the video (Source: {source_url})
+- Strictly do not lose data during conversion.
+- Do not skip the data just because the image is not available. Use placeholders for images with names (fig1, fig2...etc.) to explain that part.
+- Do not keep image placeholders to the end of the note. Place them properly during the note.
+"""
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "system", "content": "You are a helpful assistant that creates detailed study notes from transcripts."},
+                  {"role": "user", "content": prompt}]
+    )
+    
+    return completion.choices[0].message.content.strip()
+
 # Function to fetch transcript from YouTube
 def fetch_transcript(video_id: str) -> str:
     """Fetches the raw transcript from a YouTube video."""
@@ -70,10 +92,18 @@ if youtube_url:
     # Display embedded YouTube video
     st.video(full_url)
 
+    # Add note above buttons
+    st.markdown(
+        """
+        **Note**: Use the **Transcript** button to view the full transcript of the video.  
+        Use the **Note** button to generate a concise, formatted, and easy-to-read study note.
+        """
+    )
+
     # Create columns for buttons
     col1, col2 = st.columns(2)
 
-    # Buttons to toggle between transcript and a placeholder message
+    # Buttons to toggle between transcript and note generation
     with col1:
         transcript_button = st.button("Transcript")
     with col2:
@@ -94,24 +124,17 @@ if youtube_url:
         st.markdown(f"<article style='white-space: pre-wrap;'>{formatted_transcript}</article>", 
                     unsafe_allow_html=True)
 
-        # JavaScript for "Copy to Clipboard"
-        copy_script = f"""
-        <script>
-        function copyToClipboard() {{
-            const textToCopy = `{formatted_transcript.replace("`", "\\`")}`;
-            navigator.clipboard.writeText(textToCopy).then(function() {{
-                alert('Transcript copied to clipboard!');
-            }}, function(err) {{
-                console.error('Could not copy text: ', err);
-            }});
-        }}
-        </script>
-        <button onclick="copyToClipboard()">Copy Transcript</button>
-        """
-        
-        # Embed the script and button using Streamlit components
-        components.html(copy_script, height=40)
-
     elif note_button:
-        # Display "To be added soon" when Note button is clicked
-        st.write("To be added soon")
+        # Check if study note already exists in session state
+        if "study_note" not in st.session_state or st.session_state.get("current_video_id") != video_id:
+            # Generate and store study note
+            raw_text = fetch_transcript(video_id)
+            study_note = generate_study_note(raw_text, full_url)
+            st.session_state["study_note"] = study_note
+            st.session_state["current_video_id"] = video_id
+        else:
+            study_note = st.session_state["study_note"]
+
+        # Display the generated study note
+        st.markdown(f"<article style='white-space: pre-wrap;'>{study_note}</article>", 
+                    unsafe_allow_html=True)
