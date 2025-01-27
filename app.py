@@ -72,7 +72,7 @@ IMPORTANT:
 - Mention the source of the video (Source: {source_url})
 - Strictly do not lose data during conversion even if it seems irrelevant.
 - If equations are mentioned provide latex code
-- If images can be used to make better explanation, use a name (eg: fig1, fig2...etc.) and explain the topic in the note. Strictly do not miss it.
+- If images are used in the explanation, use a name (eg: fig1, fig2...etc.) and explain the topic in the note. Strictly do not miss the data.
 - For the mentioned images, provide placeholders in the note(name and a brief explantion).
 - The placeholders should be properly placed during the note, do not keep it for end of the note.
 """
