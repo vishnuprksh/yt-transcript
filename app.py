@@ -2,13 +2,17 @@ import re
 import streamlit as st
 from openai import OpenAI
 from groq import Groq
-from youtube_transcript_api import YouTubeTranscriptApi
 import streamlit.components.v1 as components
+from youtube_transcript_api import YouTubeTranscriptApi
 from datetime import datetime
 
 # Initialize clients
 openai_client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 groq_client = Groq(api_key=st.secrets["groq"]["api_key"])
+hf_client = OpenAI(
+    base_url="https://api-inference.huggingface.co/v1/",
+    api_key=st.secrets["hf"]["api_key"]
+)
 
 # Function to get YouTube video ID from a URL
 def get_video_id(url: str) -> str:
@@ -41,6 +45,23 @@ def call_groq_model(prompt: str) -> str:
     # Remove <think>...</think> tags from the output
     return re.sub(r"<think>.*?</think>", "", full_output, flags=re.DOTALL).strip()
 
+# Function to call Hugging Face DeepSeek-R1-Distill-Qwen-32B
+def call_hf_model(prompt: str) -> str:
+    """Calls Hugging Face DeepSeek-R1-Distill-Qwen-32B model and returns the result."""
+    messages = [{"role": "user", "content": prompt}]
+    stream = hf_client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+        messages=messages,
+        temperature=0.5,
+        max_tokens=2048,
+        top_p=0.7,
+        stream=True
+    )
+    full_output = ""
+    for chunk in stream:
+        full_output += chunk.choices[0].delta.content
+    return full_output.strip()
+
 # Function to format transcript using the selected model
 def format_transcript(text: str, source_url: str, model: str) -> str:
     """Formats the transcript text using the selected model."""
@@ -58,6 +79,8 @@ def format_transcript(text: str, source_url: str, model: str) -> str:
         return call_gpt_model(prompt)
     elif model == "Groq R1":
         return call_groq_model(prompt)
+    elif model == "HF DeepSeek-R1-Qwen-32B":
+        return call_hf_model(prompt)
 
 # Function to generate study notes using the selected model
 def generate_study_note(transcript: str, source_url: str, model: str) -> str:
@@ -70,17 +93,16 @@ PURPOSE:
 - Change the following transcript into a detailed study note (talking style to layman style explanation). 
 IMPORTANT:
 - Mention the source of the video (Source: {source_url})
-- Strictly do not lose data during conversion even if it seems irrelevant (calculations, examples...etc).
-- If equations are mentioned, render using latex
-- STRICTLY do not enclose latex equations in brackets (enclose in single or double dollar signs instead)
-- If images are used in the explanation, use a name (eg: fig1, fig2...etc.) and explain the topic in the note. Strictly do not miss the data.
-- For the mentioned images, provide placeholders in the note(name and a brief explantion).
-- The placeholders should be properly placed during the note, do not keep it for end of the note.
+- Strictly do not lose data during conversion.
+- Do not skip the data just because the image is not available. Use placeholders for images with names (fig1, fig2...etc.) to explain that part.
+- Do not keep image placeholders to the end of the note. Place them properly during the note.
 """
     if model == "GPT-4o-mini":
         return call_gpt_model(prompt)
     elif model == "Groq R1":
         return call_groq_model(prompt)
+    elif model == "HF DeepSeek-R1-Qwen-32B":
+        return call_hf_model(prompt)
 
 # Function to fetch transcript from YouTube
 def fetch_transcript(video_id: str) -> str:
@@ -95,7 +117,10 @@ st.title("YouTube Video Transcript Viewer")
 youtube_url = st.text_input("Enter YouTube Video URL:", "")
 
 # Dropdown to select the model
-model_option = st.selectbox("Choose a model:", ["GPT-4o-mini", "Groq R1"])
+model_option = st.selectbox(
+    "Choose a model:", 
+    ["GPT-4o-mini", "Groq R1", "HF DeepSeek-R1-Qwen-32B"]
+)
 
 if youtube_url:
     video_id = get_video_id(youtube_url)
